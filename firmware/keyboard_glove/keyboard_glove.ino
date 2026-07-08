@@ -1,35 +1,54 @@
-// Keyboard In My Hand — 수정판 펌웨어 (원본: sketch_nov28a.ino)
-// 원본 대비 수정 사항:
-//  [버그] L_tapcount 오타(컴파일 에러) → L 상태 배열로 통일
-//  [버그] L_pending / pending 미정의 변수(컴파일 에러) → 상태 구조 재정리
-//  [버그] 'bs', 'sp' 다중문자 상수 → KEY_BACKSPACE / ' ' 로 교체 (원본은 백스페이스·스페이스가 실제로 전송되지 않음)
-//  [버그] 왼손 싱글/더블 탭이 윈도우 만료 시 확정되지 않던 로직 → 만료 확정 구현
-//  [개선] 스위치 바운스(채터링)가 연타로 오인되던 문제 → DEBOUNCE_MS 가드 추가
-//  [옵션] EARLY_COMMIT: 다른 버튼이 눌리면 대기 중인 탭을 즉시 확정 → 싱글탭 300ms 지연 대부분 제거 (기본 꺼짐, 실험 후 채택 판단)
+// Keyboard In My Hand — 장갑형 한글 키보드 펌웨어 (Arduino Leonardo / ATmega32u4)
 //
-// 동작 원리(원본 설계 유지): 같은 버튼을 300ms 안에 2·3연타하면 파생 자모(ㄱ→ㅋ→ㄲ).
-// OS에는 두벌식 QWERTY 키코드를 USB HID로 전송 → OS 한글 IME가 조합.
+// 동작 원리: 같은 버튼을 tapWindow(ms) 안에 2·3연타하면 파생 자모(ㄱ→ㅋ→ㄲ).
+// OS에는 두벌식 QWERTY 키코드를 USB HID로 전송 → OS 한글 IME가 조합한다.
+//
+// [원본(sketch_nov28a.ino) 대비 수정 사항]
+//  [버그] L_tapcount 오타 / L_pending·pending 미정의 변수 (컴파일 불가) → 상태 구조 재정리
+//  [버그] 'bs','sp' 다중문자 상수 → KEY_BACKSPACE, ' ' 로 교체 (원본은 백스페이스·스페이스 미전송)
+//  [버그] 왼손 싱글/더블 탭이 윈도우 만료 시 확정되지 않던 로직 → 만료 확정 구현
+//  [개선] 스위치 바운스(채터링)가 연타로 오인되던 문제 → DEBOUNCE_MS 가드
+//  [개선] 키 배열을 PPT 슬라이드 12 표(정본)에 맞춰 교정
+//  [신규] RAW_TAP_MODE — 연타 판정 없이 물리 탭을 그대로 전송(캘리브레이션 측정 전용)
+//  [신규] CAL_STAMP — 소스 설정값이 EEPROM에 저장된 옛 값을 이길 수 있게 하는 버전 스탬프
+//  [옵션] EARLY_COMMIT — 다른 버튼이 눌리면 대기 중인 탭 즉시 확정(싱글탭 지연 제거, 기본 꺼짐)
+//
+// [캘리브레이션 흐름] experiments/speed_test.py 의 '탭 간격 캘리브레이션' 모드가
+//   ① RAW_TAP_MODE를 1로 바꿔 저장 → 사용자가 이 스케치를 업로드
+//   ② 두 문장을 입력받아 '의도적 연타'와 '별개 입력'의 간격 분포를 라벨과 함께 수집
+//   ③ 두 분포를 가르는 최적 임계값을 계산해 TAP_WINDOW_DEFAULT에 기록하고
+//      RAW_TAP_MODE를 0으로 되돌린 뒤 CAL_STAMP를 +1 → 사용자가 다시 업로드
+//   CAL_STAMP가 바뀌면 펌웨어는 EEPROM의 옛 값을 버리고 소스 값을 채택한다.
 
 #include <Keyboard.h>
 #include <EEPROM.h>
 
-// 연타 판정 윈도우: 기본 300ms, 시리얼 명령으로 사용자별 조정 가능 (EEPROM 저장)
-//   W<ms>  윈도우 설정 (예: W250)      S  현재 값 EEPROM 저장
-//   C1/C0  캘리브레이션 스트림 on/off   ?  현재 상태 출력
-// 캘리브레이션: tools/calibrate_window.py 로 문장 1회 입력 → 개인 연타 분포 측정 → 자동 설정
-unsigned long tapWindow = 300;
+// ===== CALIBRATION BLOCK BEGIN — speed_test.py가 자동 수정하는 영역 =====
+// (수동 편집도 가능하지만 형식은 유지할 것: 값 하나짜리 한 줄)
+#define RAW_TAP_MODE 0                             // 1 = 연타 판정 없이 물리 탭을 즉시 전송(측정용)
+const unsigned long TAP_WINDOW_DEFAULT = 300;      // ms — 연타 판정 윈도우 기본값
+const uint16_t CAL_STAMP = 1;                      // 설정이 바뀔 때마다 +1 (EEPROM보다 소스 우선)
+// ===== CALIBRATION BLOCK END =====
+
 const unsigned long DEBOUNCE_MS = 30;  // 바운스 무시 구간 (ms)
-#define EARLY_COMMIT 0                 // 1로 바꾸면 다른 버튼 입력 시 즉시 확정
-const int EE_MAGIC_ADDR = 0, EE_WIN_ADDR = 1;
+#define EARLY_COMMIT 0                 // 1로 바꾸면 다른 버튼 입력 시 대기 탭 즉시 확정
+
+// 런타임 상태 — 시리얼 명령으로도 조정 가능 (재업로드 없이 실험할 때)
+//   W<ms> 윈도우 설정 · S EEPROM 저장 · R1/R0 raw-tap on/off · C1/C0 탭 스트림 · ? 상태
+unsigned long tapWindow = TAP_WINDOW_DEFAULT;
+bool rawTap = (RAW_TAP_MODE != 0);
 bool calStream = false;
+
+const int EE_MAGIC_ADDR = 0;   // 0x42
+const int EE_WIN_ADDR   = 1;   // 2 bytes
+const int EE_STAMP_ADDR = 3;   // 2 bytes
+const uint8_t EE_MAGIC  = 0x42;
 
 // 검지부터 1a, 1b, 2a, 2b, 3a, 3b, 4 + 5(기능키)
 const int L_PINS[8] = {2, 3, 4, 5, 6, 7, 8, 9};
 const int R_PINS[8] = {10, 11, 12, 13, 14, 15, 16, 17};
 
 // [탭수-1]번째 키코드. 0 = 특수키(별도 처리)
-// ※ 키 배열은 PPT 슬라이드 12 표(정본) 기준으로 교정됨 — 원본 .ino는 수정 전 구버전
-//   (원본과 차이: ㅅ버튼 2연타=ㅁ(원본 ㅎ), ㅇ버튼 2연타=ㅎ(원본 ㅁ), 모음 마디 짝 ㅗ/ㅜ/ㅣ 재배치)
 const char L_KEYS[8][3] = {
   {'r', 'z', 'R'},  // L1a: ㄱ ㅋ ㄲ
   {'t', 'a', 'T'},  // L1b: ㅅ ㅁ ㅆ
@@ -48,7 +67,7 @@ const char R_KEYS[8][3] = {
   {'o', 'O', 'o'},  // R3a: ㅐ ㅒ
   {'l', 'm', 'l'},  // R3b: ㅣ ㅡ
   {'p', 'P', 'p'},  // R4 : ㅔ ㅖ
-  {0, 0, 0},        // R5 : Space(1탭) . (2탭) Enter(3탭)
+  {0, 0, 0},        // R5 : Space(1탭) · .(2탭) · Enter(3탭)
 };
 const uint8_t L_MAXTAP[8] = {3, 3, 2, 3, 3, 2, 3, 1};
 const uint8_t R_MAXTAP[8] = {2, 2, 2, 2, 2, 2, 2, 3};
@@ -94,10 +113,20 @@ void handleSide(bool isLeft, const int *pins, TapState *st, const uint8_t *maxTa
     // 눌림 edge + 디바운스
     if (!st[i].lastPressed && pressed && (now - st[i].lastEdge > DEBOUNCE_MS)) {
       st[i].lastEdge = now;
-      if (calStream) {  // 캘리브레이션: 버튼id 시각(ms) 스트림
+      if (calStream) {  // 탭 스트림: 버튼id 시각(ms)
         Serial.print(isLeft ? 'L' : 'R'); Serial.print(i);
         Serial.print(' '); Serial.println(now);
       }
+
+      if (rawTap) {
+        // raw-tap 모드: 연타 판정을 하지 않고 물리 탭 1회 = 기본 자모 1회 전송.
+        // PC 쪽 캘리브레이션 도구가 탭 사이 실제 시간 간격을 복원할 수 있게 한다.
+        emitKey(isLeft, i, 1);
+        st[i].count = 0;
+        st[i].lastPressed = pressed;
+        continue;
+      }
+
 #if EARLY_COMMIT
       flushExcept(isLeft, i);
 #endif
@@ -116,22 +145,37 @@ void handleSide(bool isLeft, const int *pins, TapState *st, const uint8_t *maxTa
     }
     st[i].lastPressed = pressed;
 
-    // 윈도우 만료 → 대기분 확정
-    if (st[i].count && (now - st[i].first > tapWindow)) {
+    // 윈도우 만료 → 대기분 확정 (raw-tap 모드에서는 대기 자체가 없다)
+    if (!rawTap && st[i].count && (now - st[i].first > tapWindow)) {
       emitKey(isLeft, i, st[i].count);
       st[i].count = 0;
     }
   }
 }
 
+void saveToEeprom() {
+  EEPROM.update(EE_MAGIC_ADDR, EE_MAGIC);
+  EEPROM.update(EE_WIN_ADDR, tapWindow & 0xFF);
+  EEPROM.update(EE_WIN_ADDR + 1, (tapWindow >> 8) & 0xFF);
+  EEPROM.update(EE_STAMP_ADDR, CAL_STAMP & 0xFF);
+  EEPROM.update(EE_STAMP_ADDR + 1, (CAL_STAMP >> 8) & 0xFF);
+}
+
 void setup() {
   for (int i = 0; i < 8; i++) pinMode(L_PINS[i], INPUT_PULLUP);
   for (int i = 0; i < 8; i++) pinMode(R_PINS[i], INPUT_PULLUP);
-  // EEPROM에서 사용자 캘리브레이션 값 복원
-  if (EEPROM.read(EE_MAGIC_ADDR) == 0x42) {
+
+  // 소스의 CAL_STAMP와 EEPROM에 저장된 스탬프가 같을 때만 EEPROM 값을 쓴다.
+  // 스탬프가 다르면 = 캘리브레이션 도구가 소스를 갱신한 것이므로 소스 값이 이긴다.
+  uint16_t eeStamp = EEPROM.read(EE_STAMP_ADDR) | (EEPROM.read(EE_STAMP_ADDR + 1) << 8);
+  if (EEPROM.read(EE_MAGIC_ADDR) == EE_MAGIC && eeStamp == CAL_STAMP) {
     unsigned int w = EEPROM.read(EE_WIN_ADDR) | (EEPROM.read(EE_WIN_ADDR + 1) << 8);
     if (w >= 100 && w <= 600) tapWindow = w;
+  } else {
+    tapWindow = TAP_WINDOW_DEFAULT;
+    saveToEeprom();
   }
+
   Serial.begin(115200);
   delay(3000);  // Leonardo USB/HID 안정화
   Keyboard.begin();
@@ -149,15 +193,18 @@ void handleSerial() {
         if (w >= 100 && w <= 600) { tapWindow = w; Serial.print(F("OK W=")); Serial.println(tapWindow); }
         else Serial.println(F("ERR range 100~600"));
       } else if (buf[0] == 'S') {
-        EEPROM.update(EE_MAGIC_ADDR, 0x42);
-        EEPROM.update(EE_WIN_ADDR, tapWindow & 0xFF);
-        EEPROM.update(EE_WIN_ADDR + 1, (tapWindow >> 8) & 0xFF);
+        saveToEeprom();
         Serial.println(F("SAVED"));
+      } else if (buf[0] == 'R') {
+        rawTap = (buf[1] == '1');
+        Serial.println(rawTap ? F("RAW ON") : F("RAW OFF"));
       } else if (buf[0] == 'C') {
         calStream = (buf[1] == '1');
         Serial.println(calStream ? F("CAL ON") : F("CAL OFF"));
       } else if (buf[0] == '?') {
-        Serial.print(F("window_ms=")); Serial.println(tapWindow);
+        Serial.print(F("window_ms=")); Serial.print(tapWindow);
+        Serial.print(F(" stamp=")); Serial.print(CAL_STAMP);
+        Serial.print(F(" raw=")); Serial.println(rawTap ? 1 : 0);
       }
       len = 0;
     } else if (len < 15) buf[len++] = c;

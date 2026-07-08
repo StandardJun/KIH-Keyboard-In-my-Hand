@@ -56,9 +56,14 @@ input *mechanism*, not the form factor; switches, gloves and wireless are swappa
 3. **Sequential, never chorded.** Chorded keyboards have failed for 40 years on memorization
    burden (Twiddler: 4.3 WPM in session 1). Discrete tactile switches give a deterministic,
    eyes-free confirmation click — no probabilistic gesture recognition.
-4. **Per-user calibration.** The multi-tap window (default 300 ms) is calibrated per user:
-   type one pangram-like sentence and the firmware stores your personal window in EEPROM
-   ([`firmware/calibrate_window.py`](firmware/calibrate_window.py)).
+4. **Per-user calibration.** The multi-tap window (default 300 ms) is calibrated per user by
+   [`experiments/speed_test.py`](experiments/speed_test.py): the firmware is flipped to a
+   raw-tap mode, the user types two sentences, and every inter-tap interval is labelled
+   *intentional multi-tap* vs *separate keystroke that happens to reuse the button* by
+   aligning the observed keydowns against the target sequence from `mapping.json`. The tool
+   then picks the threshold minimising misclassification and **rewrites
+   `TAP_WINDOW_DEFAULT` in the .ino directly** (bumping a `CAL_STAMP` so the board's stored
+   EEPROM value cannot shadow the newly calibrated one). No serial port, no extra packages.
 
 Pilot speed: **9–15 WPM** (3 users) — on par with state-of-the-art hands-/eyes-free
 techniques (9–16 WPM range at CHI '18–'26).
@@ -68,9 +73,10 @@ techniques (9–16 WPM range at CHI '18–'26).
 ```
 firmware/
   keyboard_glove/         Arduino Leonardo firmware (USB HID, multi-tap engine,
-                          serial-configurable tap window, EEPROM persistence)
+                          raw-tap measurement mode, calibration block patched by the
+                          calibration tool, CAL_STAMP + EEPROM persistence)
   keyboard_glove/legacy/  original course-project sketch (development history)
-  calibrate_window.py     per-user tap-window calibration tool (pyserial)
+  calibrate_window.py     optional serial route: tune the window live without re-flashing
 experiments/
   PROTOCOL.md             5-experiment protocol (Korean): button reach-time & mapping
                           cost, learning curve, usability/posture, cursor-OSK comparison,
@@ -109,12 +115,13 @@ Serial commands at 115200 baud: `W<ms>` set tap window · `S` save to EEPROM ·
 
 ```bash
 # needs Python 3.8+; GUIs use tkinter (stdlib), no pip packages
-python experiments/speed_test.py            # 1-min speed test
+python experiments/speed_test.py            # 1-min speed test + tap-window calibration
+python experiments/speed_test.py --selftest # verify metrics & .ino patching without a GUI
 python experiments/logger.py --mode transcribe --participant P01 --session S1
 python experiments/logger.py --mode tap --self-test
 python experiments/tv_osk_test.py           # cursor-OSK baseline (--selftest available)
 python experiments/analyze.py transcribe    # figures (needs matplotlib)
-python firmware/calibrate_window.py         # needs: pip install pyserial
+python firmware/calibrate_window.py         # optional serial route (pip install pyserial)
 ```
 
 ## Results
