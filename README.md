@@ -83,8 +83,9 @@ experiments/
                           eyes-free — standard text-entry methodology (MacKenzie et al.)
   logger.py               transcription/tapping logger GUI (stdlib only)
   speed_test.py           1-minute random-word speed test GUI
-  tv_osk_test.py          TV-remote-style cursor on-screen keyboard (comparison baseline,
-                          incl. a full Dubeolsik composition automaton)
+  tv_remote_sprint.py     TV-remote cursor keyboard, 60-second word sprint — the matched
+                          baseline for speed_test.py (same word pool, same WPM definition)
+  tv_osk_test.py          same input method, sentence-transcription variant
   analyze.py              metrics & figures: CPM/WPM, MSD error rate, learning curve,
                           mapping-cost vs. 10,000 random layouts
   mapping.json            16-button ↔ jamo mapping (single source of truth)
@@ -119,7 +120,8 @@ python experiments/speed_test.py            # 1-min speed test + tap-window cali
 python experiments/speed_test.py --selftest # verify metrics & .ino patching without a GUI
 python experiments/logger.py --mode transcribe --participant P01 --session S1
 python experiments/logger.py --mode tap --self-test
-python experiments/tv_osk_test.py           # cursor-OSK baseline (--selftest available)
+python experiments/tv_remote_sprint.py      # TV-remote baseline, 60s word sprint (--selftest)
+python experiments/tv_osk_test.py           # same, sentence-transcription variant
 python experiments/analyze.py transcribe    # figures (needs matplotlib)
 python firmware/calibrate_window.py         # optional serial route (pip install pyserial)
 ```
