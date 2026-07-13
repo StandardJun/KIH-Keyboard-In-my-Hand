@@ -4,12 +4,12 @@
 보고서 사용처: §2 수행방법(방법론), §3 내용(결과 그래프), 심사기준 '기술성·보고서 충실도' 대응.
 
 실험 5종: A(버튼 도달시간·매핑 비용) / B(학습곡선) / C(사용성·자세) / **D(기기 비교: 커서식 OSK)** / **E(eyes-free)**.
-도구: `logger.py`(A·B·C·E), `speed_test.py`(1분 속도), `tv_osk_test.py`(D), 분석 `analyze.py`.
+도구: `logger.py`(A·B·C·E), `speed_test.py`(1분 속도), `tv_remote_sprint.py`·`tv_osk_test.py`(D), 분석 `analyze.py`. 사전 단계: `firmware/keyboard_glove/tap_calibration.py`.
 **데이터 수집 목표 기한: 8/1(토)** — 분석·그래프 제작 기간 확보를 위해 엄수.
 
 ## 사전 단계 — 연타 윈도우 캘리브레이션 (참가자별, 최초 1회)
 
-`python speed_test.py` → 테스트 모드 **"탭 간격 캘리브레이션"** 선택. 도구가 순서대로 안내한다.
+`python ../firmware/keyboard_glove/tap_calibration.py` 실행(펌웨어 설정을 바꾸므로 .ino와 같은 폴더에 있다). 도구가 순서대로 안내한다.
 
 1. **raw-tap 전환**: 도구가 `keyboard_glove.ino`의 `RAW_TAP_MODE`를 1로 바꿔 저장 → Arduino IDE에서 업로드. (연타를 합치지 않고 물리 탭을 그대로 보내야 실제 간격을 잴 수 있다.)
 2. **측정**: PC 입력 언어를 **영문**으로 두고 문장 2개를 평소 리듬으로 입력.
@@ -19,7 +19,7 @@
 3. **적용**: 도구가 두 분포의 오분류를 최소화하는 임계값을 계산해 표시 → [펌웨어에 적용] 클릭 시 `TAP_WINDOW_DEFAULT`를 기록하고 `RAW_TAP_MODE`를 0으로 되돌리며 `CAL_STAMP`를 +1 → **다시 업로드하면 완료**. (스탬프가 바뀌어야 보드의 EEPROM 옛 값 대신 새 값이 쓰인다. 수정 전 .ino는 `.ino.bak-<시각>`으로 백업된다.)
 4. **설정된 윈도우 값(ms)을 세션 시트에 기록** — 조건 간 비교(실험 D·E)에서는 같은 참가자의 윈도우를 고정 유지.
 
-산출: `logs/<P>_<S>_tap_intervals_*.csv`(간격 1행씩, 라벨 포함) · `logs/<P>_<S>_tap_summary_*.csv`(분포 통계 + 권고 임계값 + 오분류 수). 임계값 결정 근거를 보고서 §3.3에 인용할 수 있다.
+산출: `logs/<참가자>_tap_intervals_*.csv`(간격 1행씩, 라벨 포함) · `logs/<참가자>_tap_summary_*.csv`(분포 통계 + 권고 임계값 + 오분류 수). 캘리브레이션은 참가자당 1회이므로 세션 구분이 없고, 실험 도구와 같은 참가자 ID를 쓰면 결과 대조가 쉽다. 임계값 결정 근거를 보고서 §3.3에 인용할 수 있다.
 ※ 보드를 재업로드하지 않고 값만 즉석에서 바꿔 보려면 `firmware/calibrate_window.py`(시리얼, pyserial 필요)를 쓴다.
 
 ---

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """연타 판정 윈도우 캘리브레이션 — 시리얼 경로(선택) · 재업로드 없이 값만 바꾸고 싶을 때.
 
-※ 기본 경로는 experiments/speed_test.py 의 '탭 간격 캘리브레이션' 모드다.
+※ 기본 경로는 keyboard_glove/tap_calibration.py 다.
    그쪽은 (a) 목표 문장으로 각 탭을 정렬해 '의도적 연타'와 '별개 입력'을
    라벨과 함께 수집하고, (b) 두 분포의 오분류를 최소화하는 임계값을 계산해
    (c) keyboard_glove.ino 의 TAP_WINDOW_DEFAULT 를 직접 수정한다. pyserial도 필요 없다.

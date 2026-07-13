@@ -13,7 +13,7 @@
 //  [신규] CAL_STAMP — 소스 설정값이 EEPROM에 저장된 옛 값을 이길 수 있게 하는 버전 스탬프
 //  [옵션] EARLY_COMMIT — 다른 버튼이 눌리면 대기 중인 탭 즉시 확정(싱글탭 지연 제거, 기본 꺼짐)
 //
-// [캘리브레이션 흐름] experiments/speed_test.py 의 '탭 간격 캘리브레이션' 모드가
+// [캘리브레이션 흐름] 같은 폴더의 tap_calibration.py 가
 //   ① RAW_TAP_MODE를 1로 바꿔 저장 → 사용자가 이 스케치를 업로드
 //   ② 두 문장을 입력받아 '의도적 연타'와 '별개 입력'의 간격 분포를 라벨과 함께 수집
 //   ③ 두 분포를 가르는 최적 임계값을 계산해 TAP_WINDOW_DEFAULT에 기록하고
@@ -23,7 +23,7 @@
 #include <Keyboard.h>
 #include <EEPROM.h>
 
-// ===== CALIBRATION BLOCK BEGIN — speed_test.py가 자동 수정하는 영역 =====
+// ===== CALIBRATION BLOCK BEGIN — tap_calibration.py가 자동 수정하는 영역 =====
 // (수동 편집도 가능하지만 형식은 유지할 것: 값 하나짜리 한 줄)
 #define RAW_TAP_MODE 0                             // 1 = 연타 판정 없이 물리 탭을 즉시 전송(측정용)
 const unsigned long TAP_WINDOW_DEFAULT = 300;      // ms — 연타 판정 윈도우 기본값

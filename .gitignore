@@ -5,3 +5,5 @@ experiments/logs/
 *.pptx
 report/
 .DS_Store
+tap_calibration.config.json
+*.ino.bak-*

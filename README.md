@@ -57,7 +57,8 @@ input *mechanism*, not the form factor; switches, gloves and wireless are swappa
    burden (Twiddler: 4.3 WPM in session 1). Discrete tactile switches give a deterministic,
    eyes-free confirmation click — no probabilistic gesture recognition.
 4. **Per-user calibration.** The multi-tap window (default 300 ms) is calibrated per user by
-   [`experiments/speed_test.py`](experiments/speed_test.py): the firmware is flipped to a
+   [`firmware/keyboard_glove/tap_calibration.py`](firmware/keyboard_glove/tap_calibration.py):
+   the firmware is flipped to a
    raw-tap mode, the user types two sentences, and every inter-tap interval is labelled
    *intentional multi-tap* vs *separate keystroke that happens to reuse the button* by
    aligning the observed keydowns against the target sequence from `mapping.json`. The tool
@@ -72,10 +73,14 @@ techniques (9–16 WPM range at CHI '18–'26).
 
 ```
 firmware/
-  keyboard_glove/         Arduino Leonardo firmware (USB HID, multi-tap engine,
-                          raw-tap measurement mode, calibration block patched by the
-                          calibration tool, CAL_STAMP + EEPROM persistence)
-  keyboard_glove/legacy/  original course-project sketch (development history)
+  keyboard_glove/
+    keyboard_glove.ino    Arduino Leonardo firmware (USB HID, multi-tap engine, raw-tap
+                          measurement mode, calibration block, CAL_STAMP + EEPROM)
+    tap_calibration.py    per-user multi-tap window calibration — lives next to the sketch
+                          because it edits it
+    mapping.json          copy of experiments/mapping.json so the calibration tool works
+                          standalone; keep both in sync (the tool warns if they diverge)
+    legacy/               original course-project sketch (development history)
   calibrate_window.py     optional serial route: tune the window live without re-flashing
 experiments/
   PROTOCOL.md             5-experiment protocol (Korean): button reach-time & mapping
@@ -116,8 +121,8 @@ Serial commands at 115200 baud: `W<ms>` set tap window · `S` save to EEPROM ·
 
 ```bash
 # needs Python 3.8+; GUIs use tkinter (stdlib), no pip packages
-python experiments/speed_test.py            # 1-min speed test + tap-window calibration
-python experiments/speed_test.py --selftest # verify metrics & .ino patching without a GUI
+python experiments/speed_test.py            # 1-min speed test (--selftest available)
+python firmware/keyboard_glove/tap_calibration.py   # tap-window calibration → patches the .ino
 python experiments/logger.py --mode transcribe --participant P01 --session S1
 python experiments/logger.py --mode tap --self-test
 python experiments/tv_remote_sprint.py      # TV-remote baseline, 60s word sprint (--selftest)

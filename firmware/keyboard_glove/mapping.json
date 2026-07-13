@@ -1,5 +1,5 @@
 {
-  "_사본주의": "매핑 원본. 사본이 firmware/keyboard_glove/mapping.json 에도 있으니 고칠 때 함께 갱신할 것.",
+  "_사본주의": "이 파일은 experiments/mapping.json 의 사본이다(tap_calibration.py가 같은 폴더에서 바로 읽도록). 매핑을 고치면 양쪽을 함께 갱신할 것 — 내용이 달라지면 tap_calibration 시작 화면에서 경고한다.",
   "_출처": "발표자료.pptx 슬라이드 12 표 = 정본 (팀 확정 2026-07-11). 아두이노 sketch_nov28a.ino는 수정 전 구버전 — ㅁ/ㅎ 파생과 모음 마디 짝이 다르므로 펌웨어를 PPT에 맞춰 교정 필요(firmware/keyboard_glove_fixed 반영됨).",
   "_방식": "연타(multi-tap): 300ms 윈도우 내 2·3연타로 파생 자모(가획·병서). 싱글은 윈도우 만료 시 확정. OS에는 두벌식 QWERTY 키코드로 전송(USB HID, Arduino Leonardo) → OS IME가 한글 조합.",
   "_버튼ID": "L/R=왼/오른손, 1~4=검지~소지, a/b=마디(표 1행/2행), L5/R5=기능키",
