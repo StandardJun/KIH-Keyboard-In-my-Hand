@@ -80,6 +80,9 @@ firmware/
                           because it edits it
     mapping.json          copy of experiments/mapping.json so the calibration tool works
                           standalone; keep both in sync (the tool warns if they diverge)
+    test/                 host-side test of the multi-tap engine — stubs the Arduino
+                          API, #includes the sketch and drives it on a virtual clock,
+                          so the timing logic is verified without a board (`make both`)
     legacy/               original course-project sketch (development history)
   calibrate_window.py     optional serial route: tune the window live without re-flashing
 experiments/
@@ -123,6 +126,7 @@ Serial commands at 115200 baud: `W<ms>` set tap window · `S` save to EEPROM ·
 # needs Python 3.8+; GUIs use tkinter (stdlib), no pip packages
 python experiments/speed_test.py            # 1-min speed test (--selftest available)
 python firmware/keyboard_glove/tap_calibration.py   # tap-window calibration → patches the .ino
+make -C firmware/keyboard_glove/test both           # verify the firmware tap engine (no board)
 python experiments/logger.py --mode transcribe --participant P01 --session S1
 python experiments/logger.py --mode tap --self-test
 python experiments/tv_remote_sprint.py      # TV-remote baseline, 60s word sprint (--selftest)

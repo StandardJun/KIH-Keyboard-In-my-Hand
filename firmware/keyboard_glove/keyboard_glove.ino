@@ -31,7 +31,14 @@ const uint16_t CAL_STAMP = 1;                      // 설정이 바뀔 때마다
 // ===== CALIBRATION BLOCK END =====
 
 const unsigned long DEBOUNCE_MS = 30;  // 바운스 무시 구간 (ms)
-#define EARLY_COMMIT 0                 // 1로 바꾸면 다른 버튼 입력 시 대기 탭 즉시 확정
+// 다른 버튼이 눌리면 대기 중이던 탭을 즉시 확정한다. 대기 중인 탭의 '내용'은
+// 이미 정해져 있으므로 확정 시점만 당겨질 뿐 결과는 같고, 다음 자모가 다른
+// 버튼일 확률이 96.4%(말뭉치 인접 자모쌍 분석)라 체감 지연이 크게 준다.
+// 더불어 A→B→A 처럼 다른 버튼을 사이에 둔 입력이 A의 연타로 잘못 합쳐지는
+// 문제도 함께 막는다. 끄면 모든 탭이 윈도우 만료를 기다린다.
+#ifndef EARLY_COMMIT          // 호스트 테스트에서 -DEARLY_COMMIT=0 으로 끄고 검사할 수 있다
+#define EARLY_COMMIT 1
+#endif
 
 // 런타임 상태 — 시리얼 명령으로도 조정 가능 (재업로드 없이 실험할 때)
 //   W<ms> 윈도우 설정 · S EEPROM 저장 · R1/R0 raw-tap on/off · C1/C0 탭 스트림 · ? 상태
@@ -137,10 +144,13 @@ void handleSide(bool isLeft, const int *pins, TapState *st, const uint8_t *maxTa
         st[i].first = now;
       } else {
         st[i].count++;
-        if (st[i].count >= maxTap[i]) {  // 최대 연타 도달 → 즉시 확정
-          emitKey(isLeft, i, st[i].count);
-          st[i].count = 0;
-        }
+      }
+      // 더 누를 단계가 없으면(자음 3탭·모음 2탭·기능키 1탭) 윈도우를 기다리지
+      // 않고 즉시 확정한다. 첫 탭에서 바로 최대치인 버튼(Backspace 등)도
+      // 여기서 걸리므로 기능키가 300ms씩 밀리지 않는다.
+      if (st[i].count >= maxTap[i]) {
+        emitKey(isLeft, i, st[i].count);
+        st[i].count = 0;
       }
     }
     st[i].lastPressed = pressed;

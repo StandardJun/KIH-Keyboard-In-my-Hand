@@ -7,3 +7,5 @@ report/
 .DS_Store
 tap_calibration.config.json
 *.ino.bak-*
+firmware/keyboard_glove/test/test_tap_engine
+firmware/keyboard_glove/test/test_tap_engine_noearly
