@@ -1,6 +1,5 @@
 __pycache__/
 *.pyc
-experiments/logs/
 *.hwp
 *.pptx
 report/
