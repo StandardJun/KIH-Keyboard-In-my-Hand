@@ -132,14 +132,25 @@ experiments/
   analyze.py              지표·그림: CPM/WPM, MSD 오류율, 학습곡선,
                           매핑 비용 vs 무작위 배치 10,000개
   mapping.json            16버튼 ↔ 자모 매핑 (단일 출처)
+  logs/
+    speed_vs_tv_all.csv   실험 원자료 — 참가자 20명 × 조건 2개 × 시행 15회(600행),
+                          참가자는 가명 처리
+    README.md             데이터 사전. 두 조건의 컬럼이 다른 이유
 analysis/
   mapping_analysis.py     말뭉치 → 자모 빈도, KSPC, 같은 버튼 연속쌍 비율
+  verify_results.py       RESULTS.md의 모든 수치를 원자료에서 재계산해 대조
+                          (어긋나면 종료 코드 1)
+  STUDY_DESIGN.md         실험 설계·지표 정의·한계
+  COST_MARKET.md          재료비·규모의 경제·권고 소비자가
   RESULTS.md              정량 결과
-docs/images/              사진·다이어그램·실험 그림
+docs/
+  BUILD.md                제작 가이드: 부품, 버튼 위치, 조립, 동작 확인
+  images/                 사진·다이어그램·실험 그림
 ```
 
 모든 Python 도구는 표준 라이브러리만 쓰고 GUI 없이 도는 `--selftest`를 갖고 있으며,
-펌웨어는 하드웨어 없이 돌아가는 호스트 테스트를 함께 둔다.
+펌웨어는 하드웨어 없이 돌아가는 호스트 테스트를 함께 둔다. 실험 원자료가 레포에 있어
+아래 수치는 `python analysis/verify_results.py`로 다시 계산해 확인할 수 있다.
 
 ## 하드웨어
 

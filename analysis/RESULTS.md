@@ -1,5 +1,9 @@
 # Results
 
+Every figure on this page is computed from [`experiments/logs/speed_vs_tv_all.csv`](../experiments/logs/speed_vs_tv_all.csv)
+(600 trials, [data dictionary](../experiments/logs/README.md)). Run
+`python analysis/verify_results.py` to recompute them and fail on any mismatch.
+
 ## 1. User study — KIH vs. TV on-screen keyboard
 
 **Design.** Within-subject, 20 participants. Two conditions: KIH (glove) and a TV-style cursor

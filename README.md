@@ -145,14 +145,25 @@ experiments/
   analyze.py              metrics & figures: CPM/WPM, MSD error rate, learning curve,
                           mapping cost vs. 10,000 random layouts
   mapping.json            16-button ↔ jamo mapping (single source of truth)
+  logs/
+    speed_vs_tv_all.csv   raw per-trial records for the study — 20 participants × 2
+                          conditions × 15 trials (600 rows), participants pseudonymous
+    README.md             data dictionary; why the two conditions carry different columns
 analysis/
   mapping_analysis.py     corpus → jamo frequency, KSPC, same-button bigram rate
+  verify_results.py       recomputes every figure in RESULTS.md from the raw data and
+                          exits non-zero on any mismatch
+  STUDY_DESIGN.md         study design, metric definitions and limitations
+  COST_MARKET.md          bill of materials, scale economics and recommended price
   RESULTS.md              quantitative results
-docs/images/              photos, diagrams and the study figure
+docs/
+  BUILD.md                build guide: parts, button placement, assembly, bring-up
+  images/                 photos, diagrams and the study figure
 ```
 
 Every Python tool is standard-library only and ships with a `--selftest` that runs without a GUI;
-the firmware has a host-side test suite that needs no hardware.
+the firmware has a host-side test suite that needs no hardware. The study's raw data is in the
+repository, so the numbers below can be recomputed with `python analysis/verify_results.py`.
 
 ## Hardware
 
