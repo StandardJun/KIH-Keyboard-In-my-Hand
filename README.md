@@ -6,8 +6,7 @@
 
 Team 손보드 (HandBoard) · Department of Mechanical Engineering, Seoul National University
 🏆 **Grand Prize**, Mechatronics Competition (SNU Dept. of Mechanical Engineering / HD Hyundai, Dec 2025)
-Entry for the 15th SNU College of Engineering Creative Design Festival (창의설계축전, 2026)
-<!-- TODO: update once the festival result is out -->
+🥉 **Bronze Prize**, 15th SNU College of Engineering Creative Design Festival (창의설계축전, Sep 2026)
 
 <p align="center">
   <img src="docs/images/glove_photo.png" width="560" alt="KIH prototype"/>
@@ -117,6 +116,15 @@ on the hand instead of on the desk.
    directly** — bumping a `CAL_STAMP` so the board's stored EEPROM value cannot shadow the newly
    calibrated one. No serial port, no extra packages.
 
+## Beyond the glove: KIH-XR
+
+The mechanism does not depend on the glove. [`xr/`](xr/) runs the same 16-spot layout and multi-tap
+engine on **camera hand tracking alone** — MediaPipe estimates 21 joints per hand, virtual buttons are
+placed on the phalanxes, and a thumb-tip touch counts as a tap. The firmware's multi-tap state machine
+is ported unchanged, with a per-user calibration wizard for sweet spots, tap radius and tap window.
+Only the landmark source is device-specific, so headsets that already report hand joints (Vision Pro,
+Quest) could run the same layout with no extra hardware — the demo has been run on webcams only. See [`xr/README.md`](xr/README.md).
+
 ## Repository structure
 
 ```
@@ -156,6 +164,10 @@ analysis/
   STUDY_DESIGN.md         study design, metric definitions and limitations
   COST_MARKET.md          bill of materials, scale economics and recommended price
   RESULTS.md              quantitative results
+xr/
+  kih_xr_demo.py          glove-free demo: webcam hand tracking → virtual buttons → the same
+                          multi-tap engine; local web app with calibration wizard, `--selftest`
+  README.md               how it works, running, differences from the glove
 docs/
   BUILD.md                build guide: parts, button placement, assembly, bring-up
   images/                 photos, diagrams and the study figure

@@ -1,0 +1,17 @@
+# Keyboard In My Hand — XR(vision-only) demo · 통합 웹 앱
+# 실행: python kih_xr_demo.py --install  (= python -m pip install -r requirements.txt)  → python kih_xr_demo.py
+#       UI는 표준 http.server(브라우저 자동 오픈), 추가 의존성 없음.
+#
+# macOS 주의: mediapipe 0.10.30+ 와 1.0.x 의 macOS 빌드는 CPU 그래프에서도 Metal 초기화 CHECK 로 abort 한다
+#   ("graph_service.h Check failed: service_ Service is unavailable"). 검증된 조합 = Python 3.12 + mediapipe 0.10.21.
+#   (brew install python@3.12 → /opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv)
+mediapipe==0.10.21; sys_platform == "darwin"
+mediapipe>=0.10.14; sys_platform != "darwin"      # Linux/Windows 는 1.0.1 로 검증
+numpy<2; sys_platform == "darwin"                 # mediapipe 0.10.21 요구 (pip 이 자동 해결하지만 명시)
+numpy>=1.24; sys_platform != "darwin"
+opencv-python>=4.8      # 카메라 캡처·오버레이 (--nogui 창까지 쓰려면 headless 판 말고 이것)
+pillow>=9.0             # 오버레이 한글 텍스트
+# pynput>=1.7           # 선택: OS 키 전송(HID) 옵션
+# Intel Mac 은 mediapipe 0.10.21 x86_64 휠이 없을 수 있음 → Apple Silicon 기준.
+pywebview>=5            # 네이티브 창(macOS WKWebView). 없으면 브라우저로 자동 폴백
+pyobjc-framework-AVFoundation; sys_platform == "darwin"   # 카메라 장치 이름(내장/아이폰 구분) — 선택

@@ -8,3 +8,8 @@ tap_calibration.config.json
 *.ino.bak-*
 firmware/keyboard_glove/test/test_tap_engine
 firmware/keyboard_glove/test/test_tap_engine_noearly
+
+# XR demo: model is downloaded on first run; calibration profiles are per user
+xr/models/
+xr/profiles/
+xr/.venv/
